@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+echo "==> Checking the Node.js toolchain"
+time node -e '
+  const [major, minor] = process.versions.node.split(".").map(Number)
+  const supported = (major === 20 && minor >= 19) || (major === 22 && minor >= 12) || major > 22
+  if (!supported) {
+    console.error(`Node.js ${process.versions.node} is unsupported; Vite requires ^20.19.0 or >=22.12.0`)
+    process.exit(1)
+  }
+  console.log(`Node.js ${process.versions.node}`)
+'
+npm --version
+
+echo "==> Installing dependencies from package-lock.json"
+time npm ci --no-audit --no-fund
+
+echo "==> Orb setup complete"
