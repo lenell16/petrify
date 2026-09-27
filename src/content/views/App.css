@@ -51,6 +51,10 @@
   opacity: 0.75;
 }
 
+.petrify-save--grid:not(.petrify-save--grid-active):not(:hover):not(:focus-visible) {
+  opacity: 0;
+}
+
 .petrify-save--loading svg {
   animation: petrify-pulse 800ms ease-in-out infinite alternate;
 }
@@ -67,6 +71,54 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
+}
+
+.petrify-action-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  color: inherit;
+}
+
+.petrify-save--native {
+  position: static;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  backdrop-filter: none;
+}
+
+.petrify-save--native svg {
+  width: 24px;
+  height: 24px;
+}
+
+.petrify-save--native:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+  color: #737373;
+  transform: none;
+}
+
+.petrify-save--native.petrify-save--success {
+  color: #16a34a;
+}
+
+.petrify-save--story {
+  color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .petrify-save--native:hover:not(:disabled) {
+    color: #a8a8a8;
+  }
 }
 
 .petrify-error {
