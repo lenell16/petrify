@@ -11,12 +11,17 @@ type DownloadResponse =
   | { ok: true; count: number }
   | { ok: false; error: string }
 
+type InspectResponse =
+  | { ok: true; count: number; ids: (string | null)[] }
+  | { ok: false; error: string }
+
 type SaveButton = {
   key: string
   url: string
   kind: 'post' | 'reel' | 'story' | 'highlight'
   top: number
   left: number
+  element: Element
 }
 
 const elementIds = new WeakMap<Element, number>()
@@ -51,6 +56,7 @@ function buttonFor(element: Element, url: string, key: string): SaveButton | nul
     kind: target.kind === 'story-tray' ? 'story' : target.kind,
     top: Math.max(8, rect.top + 10),
     left: Math.max(8, Math.min(window.innerWidth - 44, rect.left + 10)),
+    element,
   }
 }
 
@@ -139,6 +145,8 @@ function findSaveButtons(): SaveButton[] {
 function App() {
   const [buttons, setButtons] = useState<SaveButton[]>([])
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({})
+  const [inspected, setInspected] = useState<Record<string, InspectResponse>>({})
+  const pending = useRef(new Set<string>())
   const [error, setError] = useState<string | null>(null)
   const scanFrame = useRef<number | null>(null)
 
@@ -170,31 +178,74 @@ function App() {
     }
   }, [scan])
 
-  const startDownload = async (button: SaveButton) => {
-    if (downloads[button.key]?.status === 'loading') return
+  useEffect(() => {
+    buttons.forEach((button) => {
+      if (button.kind !== 'post' && button.kind !== 'reel') return
+      if (inspected[button.url] || pending.current.has(button.url)) return
+      pending.current.add(button.url)
+      void chrome.runtime.sendMessage({ type: 'inspect-media', url: button.url })
+        .then((response: InspectResponse) => setInspected((current) => ({ ...current, [button.url]: response })))
+        .catch(() => setInspected((current) => ({
+          ...current,
+          [button.url]: { ok: false, error: 'Could not inspect this post.' },
+        })))
+    })
+  }, [buttons, inspected])
+
+  const startDownload = async (button: SaveButton, mode: 'one' | 'all', ids?: (string | null)[]) => {
+    const key = `${button.key}-${mode}`
+    if (downloads[key]?.status === 'loading') return
+    const visibleMedia = Array.from(button.element.querySelectorAll<HTMLImageElement | HTMLVideoElement>('img, video'))
+    if (button.element instanceof HTMLImageElement || button.element instanceof HTMLVideoElement) {
+      visibleMedia.push(button.element)
+    }
+    visibleMedia.sort((a, b) => {
+      const overlap = (element: Element) => {
+        const rect = element.getBoundingClientRect()
+        const frame = button.element.getBoundingClientRect()
+        return Math.max(0, Math.min(rect.right, frame.right, window.innerWidth) - Math.max(rect.left, frame.left, 0))
+          * Math.max(0, Math.min(rect.bottom, frame.bottom, window.innerHeight) - Math.max(rect.top, frame.top, 0))
+      }
+      return overlap(b) - overlap(a)
+    })
+    const activeMedia = visibleMedia[0]
+    const mediaId = activeMedia && mediaIdFromInstagramCdnUrl(
+      activeMedia instanceof HTMLImageElement ? activeMedia.currentSrc : activeMedia.poster,
+    )
+    const matchedId = mediaId && ids?.includes(mediaId) ? mediaId : null
+    const slide = activeMedia?.closest('li')
+    const slides = slide?.parentElement?.querySelectorAll(':scope > li')
+    const index = matchedId ? ids?.indexOf(matchedId) : slides && slides.length === ids?.length && slide
+      ? Array.from(slides).indexOf(slide)
+      : undefined
+    if (mode === 'one' && index === undefined) {
+      setError('Could not identify the current carousel item. Try opening the post or use Save all.')
+      return
+    }
     setError(null)
-    setDownloads((current) => ({ ...current, [button.key]: { status: 'loading' } }))
+    setDownloads((current) => ({ ...current, [key]: { status: 'loading' } }))
 
     try {
       const response = await chrome.runtime.sendMessage({
         type: 'download-current-media',
         url: button.url,
+        ...(mode === 'one' ? { index, ...(matchedId ? { mediaId: matchedId } : {}) } : {}),
       }) as DownloadResponse
 
       if (response.ok) {
         setDownloads((current) => ({
           ...current,
-          [button.key]: { status: 'success', count: response.count },
+          [key]: { status: 'success', count: response.count },
         }))
         window.setTimeout(() => {
-          setDownloads((current) => ({ ...current, [button.key]: { status: 'idle' } }))
+          setDownloads((current) => ({ ...current, [key]: { status: 'idle' } }))
         }, 2000)
       } else {
-        setDownloads((current) => ({ ...current, [button.key]: { status: 'idle' } }))
+        setDownloads((current) => ({ ...current, [key]: { status: 'idle' } }))
         setError(response.error)
       }
     } catch {
-      setDownloads((current) => ({ ...current, [button.key]: { status: 'idle' } }))
+      setDownloads((current) => ({ ...current, [key]: { status: 'idle' } }))
       setError('Petrify could not reach the extension background service.')
     }
   }
@@ -202,35 +253,44 @@ function App() {
   return (
     <div className="petrify-overlay">
       {buttons.map((button) => {
-        const download = downloads[button.key] ?? { status: 'idle' }
-        const label = download.status === 'loading'
-          ? `Saving this Instagram ${button.kind}`
-          : download.status === 'success'
-            ? `Saved ${download.count} media ${download.count === 1 ? 'item' : 'items'}`
-            : `Save this Instagram ${button.kind}`
+        const inspection = inspected[button.url]
+        const carousel = inspection?.ok && inspection.count > 1
+        return (carousel ? ['one', 'all'] as const : ['all'] as const).map((mode, position) => {
+          const download = downloads[`${button.key}-${mode}`] ?? { status: 'idle' }
+          const label = download.status === 'loading'
+            ? `Saving ${mode === 'one' ? 'this item' : 'all items'}`
+            : download.status === 'success'
+              ? `Saved ${download.count} media ${download.count === 1 ? 'item' : 'items'}`
+              : carousel ? mode === 'one' ? 'Save current image or video' : 'Save all carousel items'
+                : `Save this Instagram ${button.kind}`
 
-        return (
-          <button
-            key={button.key}
-            className={`petrify-save petrify-save--${download.status}`}
-            style={{ top: button.top, left: button.left }}
-            type="button"
-            disabled={download.status === 'loading'}
-            onClick={() => void startDownload(button)}
-            aria-label={label}
-            title={label}
-          >
-            {download.status === 'success' ? (
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="m5 12 4 4L19 6" />
-              </svg>
-            ) : (
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v4h14v-4" />
-              </svg>
-            )}
-          </button>
-        )
+          return (
+            <button
+              key={`${button.key}-${mode}`}
+              className={`petrify-save petrify-save--${download.status} ${carousel ? 'petrify-save--carousel' : ''}`}
+              style={{ top: button.top, left: Math.min(window.innerWidth - (carousel ? 84 : 42), button.left) + position * 42 }}
+              type="button"
+              disabled={download.status === 'loading'}
+              onClick={() => void startDownload(button, mode, inspection?.ok ? inspection.ids : undefined)}
+              aria-label={label}
+              title={label}
+            >
+              {download.status === 'success' ? (
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="m5 12 4 4L19 6" />
+                </svg>
+              ) : mode === 'all' && carousel ? (
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M4 5h16M4 9h16M12 11v9m0 0 4-4m-4 4-4-4" />
+                </svg>
+              ) : (
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v4h14v-4" />
+                </svg>
+              )}
+            </button>
+          )
+        })
       })}
 
       {error && (

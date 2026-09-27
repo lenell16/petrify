@@ -8,6 +8,7 @@ export type InstagramTarget = {
 export type DownloadableMedia = {
   extension: 'jpg' | 'mp4'
   url: string
+  id?: string
 }
 
 export type ResolvedMedia = {
@@ -137,12 +138,13 @@ function usernameFrom(item: unknown): string | undefined {
 function normalizeItem(item: unknown): DownloadableMedia | null {
   if (!isRecord(item)) return null
 
+  const id = stringAt(item, 'pk')
   const videoUrl = candidateUrl(arrayAt(item, 'video_versions'))
-  if (videoUrl) return { extension: 'mp4', url: videoUrl }
+  if (videoUrl) return { extension: 'mp4', url: videoUrl, ...(id ? { id } : {}) }
 
   const imageVersions = recordAt(item, 'image_versions2')
   const imageUrl = candidateUrl(arrayAt(imageVersions, 'candidates'))
-  if (imageUrl) return { extension: 'jpg', url: imageUrl }
+  if (imageUrl) return { extension: 'jpg', url: imageUrl, ...(id ? { id } : {}) }
 
   return null
 }
