@@ -242,7 +242,10 @@ function findSaveButtons(): SaveButton[] {
 
   const hasCurrentLink = buttons.some(({ url }) => {
     const target = parseInstagramTarget(url)
-    return target?.kind === currentTarget.kind && target.identifier === currentTarget.identifier
+    const sameKind = target?.kind === currentTarget.kind
+      || (target?.kind === 'post' || target?.kind === 'reel')
+        && (currentTarget.kind === 'post' || currentTarget.kind === 'reel')
+    return sameKind && target?.identifier === currentTarget.identifier
   })
   if (hasCurrentLink) return buttons
 
