@@ -28,6 +28,20 @@ function mediaIdFor(target: InstagramTarget): string {
 }
 
 async function fetchMedia(target: InstagramTarget): Promise<unknown> {
+  if (target.kind === 'highlight' || target.kind === 'story-tray') {
+    const reelId = target.kind === 'highlight' ? `highlight:${target.identifier}` : target.identifier
+    const response = await fetch(`https://www.instagram.com/api/v1/feed/reels_media/?reel_ids=${encodeURIComponent(reelId)}`, {
+      credentials: 'include',
+      headers: {
+        'X-IG-App-ID': INSTAGRAM_APP_ID,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    })
+
+    if (!response.ok) throw new Error(`Instagram returned an error (${response.status}).`)
+    return response.json()
+  }
+
   const mediaId = mediaIdFor(target)
   const response = await fetch(`https://www.instagram.com/api/v1/media/${encodeURIComponent(mediaId)}/info/`, {
     credentials: 'include',

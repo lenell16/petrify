@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   downloadFilename,
+  mediaIdFromInstagramCdnUrl,
   normalizeMediaResponse,
   parseInstagramTarget,
   shortcodeToMediaId,
@@ -21,6 +22,27 @@ describe('parseInstagramTarget', () => {
       identifier: '35123456789012345',
       username: 'nasa',
     })
+    expect(parseInstagramTarget('https://www.instagram.com/stories/highlights/18125485942683117/')).toEqual({
+      kind: 'highlight',
+      identifier: '18125485942683117',
+    })
+    expect(parseInstagramTarget('https://www.instagram.com/stories/nasa/?petrify_reel_id=12345&petrify_story_index=2')).toEqual({
+      kind: 'story-tray',
+      identifier: '12345',
+      itemIndex: 2,
+      username: 'nasa',
+    })
+  })
+
+  it('parses account-prefixed post and reel links used in profile grids', () => {
+    expect(parseInstagramTarget('https://www.instagram.com/zuck/p/Ddt7d7LmsO8/')).toEqual({
+      kind: 'post',
+      identifier: 'Ddt7d7LmsO8',
+    })
+    expect(parseInstagramTarget('https://www.instagram.com/zuck/reel/DdpkXmDzkGZ/')).toEqual({
+      kind: 'reel',
+      identifier: 'DdpkXmDzkGZ',
+    })
   })
 
   it('rejects lookalike hosts and non-specific story routes', () => {
@@ -34,6 +56,19 @@ describe('shortcodeToMediaId', () => {
     expect(shortcodeToMediaId('B')).toBe('1')
     expect(shortcodeToMediaId('BA')).toBe('64')
     expect(shortcodeToMediaId('___________')).toBe('73786976294838206463')
+  })
+})
+
+describe('mediaIdFromInstagramCdnUrl', () => {
+  it('decodes the media ID embedded in a story image cache key', () => {
+    const cacheKey = 'Mzk5NDk5MzE2NjQzNjA5OTUyNw=='
+    expect(mediaIdFromInstagramCdnUrl(`https://scontent.example/story.jpg?ig_cache_key=${encodeURIComponent(`${cacheKey}.3-ccb7-5`)}`))
+      .toBe('3994993166436099527')
+  })
+
+  it('rejects missing and non-numeric cache keys', () => {
+    expect(mediaIdFromInstagramCdnUrl('https://scontent.example/story.jpg')).toBeNull()
+    expect(mediaIdFromInstagramCdnUrl('https://scontent.example/story.jpg?ig_cache_key=bm90LWEtbWVkaWEtaWQ=')).toBeNull()
   })
 })
 
@@ -77,5 +112,42 @@ describe('normalizeMediaResponse', () => {
     }, { kind: 'story', identifier: '123456', username: 'nasa' })
 
     expect(downloadFilename(resolved, 0)).toBe('Petrify/nasa/nasa_story_123456.jpg')
+  })
+
+  it('normalizes every item returned for a highlight reel', () => {
+    const resolved = normalizeMediaResponse({
+      reels: {
+        'highlight:18125485942683117': {
+          user: { username: 'zuck' },
+          items: [
+            { image_versions2: { candidates: [{ width: 1080, height: 1920, url: 'https://cdn/first.jpg' }] } },
+            { video_versions: [{ width: 1080, height: 1920, url: 'https://cdn/second.mp4' }] },
+          ],
+        },
+      },
+    }, { kind: 'highlight', identifier: '18125485942683117' })
+
+    expect(resolved.items).toEqual([
+      { extension: 'jpg', url: 'https://cdn/first.jpg' },
+      { extension: 'mp4', url: 'https://cdn/second.mp4' },
+    ])
+    expect(downloadFilename(resolved, 1)).toBe('Petrify/zuck/zuck_highlight_18125485942683117_02.mp4')
+  })
+
+  it('normalizes an active story tray as story media', () => {
+    const resolved = normalizeMediaResponse({
+      reels: {
+        '44715947': {
+          user: { username: 'p_sms' },
+          items: [
+            { image_versions2: { candidates: [{ width: 1080, height: 1920, url: 'https://cdn/first.jpg' }] } },
+            { video_versions: [{ width: 1080, height: 1920, url: 'https://cdn/story.mp4' }] },
+          ],
+        },
+      },
+    }, { kind: 'story-tray', identifier: '44715947', itemIndex: 1, username: 'p_sms' })
+
+    expect(resolved.kind).toBe('story')
+    expect(downloadFilename(resolved, 0)).toBe('Petrify/p_sms/p_sms_story_44715947.mp4')
   })
 })

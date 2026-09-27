@@ -1,6 +1,7 @@
 export type InstagramTarget = {
-  kind: 'post' | 'reel' | 'story'
+  kind: 'post' | 'reel' | 'story' | 'story-tray' | 'highlight'
   identifier: string
+  itemIndex?: number
   username?: string
 }
 
@@ -54,7 +55,11 @@ export function parseInstagramTarget(input: string): InstagramTarget | null {
   if (!INSTAGRAM_HOSTS.has(url.hostname.toLowerCase())) return null
 
   const segments = url.pathname.split('/').filter(Boolean).map(decodeURIComponent)
-  const [surface, firstIdentifier, secondIdentifier] = segments
+  let [surface, firstIdentifier, secondIdentifier] = segments
+
+  if (surface !== 'stories' && ['p', 'reel', 'reels', 'tv'].includes(firstIdentifier)) {
+    [surface, firstIdentifier] = [firstIdentifier, secondIdentifier]
+  }
 
   if ((surface === 'p' || surface === 'reel' || surface === 'reels' || surface === 'tv') && firstIdentifier) {
     return {
@@ -65,8 +70,19 @@ export function parseInstagramTarget(input: string): InstagramTarget | null {
 
   if (surface === 'stories' && firstIdentifier && secondIdentifier && /^\d+$/.test(secondIdentifier)) {
     return {
-      kind: 'story',
+      kind: firstIdentifier === 'highlights' ? 'highlight' : 'story',
       identifier: secondIdentifier,
+      username: firstIdentifier === 'highlights' ? undefined : firstIdentifier.replace(/^@/, ''),
+    }
+  }
+
+  const reelId = url.searchParams.get('petrify_reel_id')
+  if (surface === 'stories' && firstIdentifier && !secondIdentifier && reelId && /^\d+$/.test(reelId)) {
+    const itemIndex = Number(url.searchParams.get('petrify_story_index'))
+    return {
+      kind: 'story-tray',
+      identifier: reelId,
+      itemIndex: Number.isInteger(itemIndex) && itemIndex >= 0 ? itemIndex : undefined,
       username: firstIdentifier.replace(/^@/, ''),
     }
   }
@@ -85,6 +101,17 @@ export function shortcodeToMediaId(shortcode: string): string {
   }
 
   return mediaId.toString()
+}
+
+export function mediaIdFromInstagramCdnUrl(input: string): string | null {
+  try {
+    const cacheKey = new URL(input).searchParams.get('ig_cache_key')?.split('.')[0]
+    if (!cacheKey) return null
+    const mediaId = atob(cacheKey)
+    return /^\d+$/.test(mediaId) ? mediaId : null
+  } catch {
+    return null
+  }
 }
 
 function candidateUrl(candidates: unknown[]): string | undefined {
@@ -121,6 +148,27 @@ function normalizeItem(item: unknown): DownloadableMedia | null {
 }
 
 export function normalizeMediaResponse(response: unknown, target: InstagramTarget): ResolvedMedia {
+  if (target.kind === 'highlight' || target.kind === 'story-tray') {
+    const reelKey = target.kind === 'highlight' ? `highlight:${target.identifier}` : target.identifier
+    const reel = recordAt(recordAt(response, 'reels'), reelKey)
+    const reelItems = arrayAt(reel, 'items')
+    const sourceItems = target.kind === 'story-tray' && target.itemIndex !== undefined
+      ? reelItems.slice(target.itemIndex, target.itemIndex + 1)
+      : reelItems
+    const items = sourceItems.map(normalizeItem).filter((item): item is DownloadableMedia => item !== null)
+    if (items.length === 0) throw new Error(`Instagram did not return media for this ${target.kind === 'highlight' ? 'highlight' : 'story'}.`)
+
+    const username = usernameFrom(reel) ?? sourceItems.map(usernameFrom).find(Boolean)
+    if (!username) throw new Error(`Instagram did not return the account name for this ${target.kind === 'highlight' ? 'highlight' : 'story'}.`)
+
+    return {
+      identifier: target.kind === 'story-tray' ? stringAt(sourceItems[0], 'pk') ?? target.identifier : target.identifier,
+      items,
+      kind: target.kind === 'story-tray' ? 'story' : target.kind,
+      username,
+    }
+  }
+
   const parent = arrayAt(response, 'items')[0]
   if (!isRecord(parent)) throw new Error('Instagram did not return media for this item.')
 

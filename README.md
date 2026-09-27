@@ -16,6 +16,6 @@ npm test
 npm run build
 ```
 
-Load the generated `dist` directory as an unpacked extension from `chrome://extensions`. Open an individual Instagram post, reel, or story and use the **Save media** button at the bottom-right of the page.
+Load the generated `dist` directory as an unpacked extension from `chrome://extensions`. Use the save icon on an Instagram grid post, individual post, reel, or story to download its media.
 
 Petrify uses Instagram's authenticated web responses and only works for media the signed-in browser session can view. Instagram's internal endpoints are not a supported public API and may change without notice.
