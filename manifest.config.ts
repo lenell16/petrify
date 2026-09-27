@@ -15,7 +15,8 @@ export default defineManifest({
     },
     default_title: 'Petrify',
   },
-  permissions: ['downloads'],
+  permissions: ['downloads', 'storage'],
+  options_ui: { page: 'options.html', open_in_tab: true },
   host_permissions: [
     'https://www.instagram.com/*',
     'https://i.instagram.com/*',

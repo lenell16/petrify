@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const download = vi.fn(async (_options: chrome.downloads.DownloadOptions) => 1)
+const get = vi.fn(async (_keys: string[]) => ({} as Record<string, unknown>))
 let listener: (message: unknown, sender: unknown, reply: (response: unknown) => void) => boolean
 
 beforeEach(async () => {
   vi.resetModules()
   download.mockClear()
+  get.mockReset().mockResolvedValue({})
   vi.stubGlobal('chrome', {
     downloads: { download },
-    runtime: { onMessage: { addListener: (callback: typeof listener) => { listener = callback } } },
+    storage: { local: { get } },
+    action: { onClicked: { addListener: vi.fn() } },
+    runtime: { onMessage: { addListener: (callback: typeof listener) => { listener = callback } }, openOptionsPage: vi.fn() },
   })
   vi.stubGlobal('fetch', vi.fn(async () => ({
     ok: true,
@@ -53,5 +57,22 @@ describe('carousel downloads', () => {
       'Petrify/space/space_post_BA_02.mp4',
       'Petrify/space/space_post_BA_03.jpg',
     ])
+  })
+
+  it('uses a nested Downloads folder and native Save As for each selected item', async () => {
+    get.mockResolvedValue({ downloadFolder: 'Archive/Instagram', askWhereToSave: true })
+    expect(await send({ type: 'download-current-media', url, index: 2 })).toEqual({ ok: true, count: 1 })
+    expect(download).toHaveBeenCalledExactlyOnceWith({
+      url: 'https://cdn/last.jpg',
+      filename: 'Archive/Instagram/space/space_post_BA_03.jpg',
+      saveAs: true,
+      conflictAction: 'uniquify',
+    })
+  })
+
+  it('rejects an invalid stored path and falls back to Petrify', async () => {
+    get.mockResolvedValue({ downloadFolder: '../outside', askWhereToSave: false })
+    expect(await send({ type: 'download-current-media', url, index: 0 })).toEqual({ ok: true, count: 1 })
+    expect(download.mock.calls[0][0].filename).toBe('Petrify/space/space_post_BA_01.jpg')
   })
 })

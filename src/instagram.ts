@@ -201,12 +201,12 @@ export function sanitizePathSegment(value: string): string {
   return sanitized || 'unknown'
 }
 
-export function downloadFilename(media: ResolvedMedia, index: number): string {
+export function downloadFilename(media: ResolvedMedia, index: number, folder = 'Petrify'): string {
   const username = sanitizePathSegment(media.username)
   const identifier = sanitizePathSegment(media.identifier)
   const item = media.items[index]
   if (!item) throw new Error('The requested media item does not exist.')
 
   const position = media.items.length > 1 ? `_${String(index + 1).padStart(2, '0')}` : ''
-  return `Petrify/${username}/${username}_${media.kind}_${identifier}${position}.${item.extension}`
+  return `${folder}/${username}/${username}_${media.kind}_${identifier}${position}.${item.extension}`
 }

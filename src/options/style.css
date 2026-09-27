@@ -1,0 +1,27 @@
+:root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202522; background: #f6f7f4; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 640px; margin: 72px auto; padding: 0 24px; }
+header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+header img { border-radius: 12px; }
+.eyebrow { margin: 0 0 4px; color: #50765b; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
+h1 { margin: 0; font-size: 28px; letter-spacing: -.03em; }
+section { padding: 30px; border: 1px solid #e1e6df; border-radius: 16px; background: white; box-shadow: 0 10px 32px #1f392108; }
+label { display: block; font-size: 15px; font-weight: 650; }
+.hint { margin: 7px 0 17px; color: #5c665d; font-size: 14px; line-height: 1.5; }
+.field { display: flex; align-items: center; gap: 6px; padding: 5px 6px 5px 15px; border: 1px solid #bac8ba; border-radius: 9px; }
+.field:focus-within { outline: 2px solid #468358; outline-offset: 2px; }
+.field span { color: #627067; font-size: 14px; white-space: nowrap; }
+.field input { min-width: 0; width: 100%; padding: 10px 6px; border: 0; outline: 0; font: inherit; }
+.example { margin: 10px 0 26px; color: #718078; font-size: 12px; overflow-wrap: anywhere; }
+.checkbox { display: flex; align-items: flex-start; gap: 12px; padding: 19px 0; border-top: 1px solid #edf0ec; cursor: pointer; }
+.checkbox input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: #316b44; }
+.checkbox small { display: block; margin-top: 5px; color: #5c665d; font-size: 13px; font-weight: 400; line-height: 1.5; }
+.actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+button { padding: 11px 18px; border: 0; border-radius: 8px; background: #28623c; color: white; font: inherit; font-weight: 650; cursor: pointer; }
+button:hover { background: #1d4b2d; }
+button:focus-visible { outline: 3px solid #468358; outline-offset: 3px; }
+button:disabled { opacity: .5; cursor: wait; }
+.actions p { margin: 0; color: #376344; font-size: 13px; line-height: 1.5; }
+.note { margin: 22px 4px; color: #5c665d; font-size: 13px; line-height: 1.6; }
+@media (max-width: 520px) { main { margin: 32px auto; } section { padding: 20px; } h1 { font-size: 24px; } }

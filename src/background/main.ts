@@ -5,6 +5,7 @@ import {
   shortcodeToMediaId,
   type InstagramTarget,
 } from '../instagram'
+import { isValidFolder } from '../downloadSettings'
 
 const INSTAGRAM_APP_ID = '936619743392459'
 
@@ -95,12 +96,15 @@ async function downloadCurrentMedia(request: DownloadRequest): Promise<DownloadR
       throw new Error('The selected carousel item is no longer available.')
     }
 
+    const { downloadFolder, askWhereToSave } = await chrome.storage.local.get(['downloadFolder', 'askWhereToSave'])
+    const folder = typeof downloadFolder === 'string' && isValidFolder(downloadFolder) ? downloadFolder : 'Petrify'
+
     for (const [itemIndex, item] of media.items.entries()) {
       if (index !== undefined && itemIndex !== index) continue
       await chrome.downloads.download({
         conflictAction: 'uniquify',
-        filename: downloadFilename(media, itemIndex),
-        saveAs: false,
+        filename: downloadFilename(media, itemIndex, folder),
+        saveAs: askWhereToSave === true,
         url: item.url,
       })
     }
@@ -111,6 +115,8 @@ async function downloadCurrentMedia(request: DownloadRequest): Promise<DownloadR
     return { ok: false, error: message }
   }
 }
+
+chrome.action.onClicked.addListener(() => { void chrome.runtime.openOptionsPage() })
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse: (response: DownloadResponse) => void) => {
   if (!isDownloadRequest(message)) return false
