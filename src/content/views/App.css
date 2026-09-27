@@ -1,56 +1,108 @@
-.popup-container {
+#petrify-root {
+  position: relative;
+  z-index: 2147483647;
+}
+
+.petrify-download,
+.petrify-download * {
+  box-sizing: border-box;
+}
+
+.petrify-download {
   position: fixed;
-  right: 0;
-  bottom: 0;
-  margin: 1.25rem;
-  z-index: 100;
+  right: 24px;
+  bottom: 96px;
+  z-index: 2147483647;
   display: flex;
+  flex-direction: column;
   align-items: flex-end;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  user-select: none;
-  line-height: 1em;
+  gap: 10px;
+  color: #0f172a;
+  font: 600 14px/1.2 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.popup-content {
-  background-color: white;
-  color: #1f2937;
-  border-radius: 0.5rem;
-  box-shadow:
-    0 4px 6px -1px rgb(0 0 0 / 0.1),
-    0 2px 4px -2px rgb(0 0 0 / 0.1);
-  width: max-content;
-  height: min-content;
-  padding: 0.5rem 1rem;
-  margin: auto 0.5rem 0 0;
-  transition: opacity 300ms;
-}
-
-.toggle-button {
-  display: flex;
+.petrify-button {
+  display: inline-flex;
+  min-width: 132px;
+  height: 44px;
+  align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  box-shadow:
-    0 1px 3px 0 rgb(0 0 0 / 0.1),
-    0 1px 2px -1px rgb(0 0 0 / 0.1);
+  gap: 9px;
+  margin: 0;
+  padding: 0 17px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  background: #111827;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 26%);
+  color: #fff;
   cursor: pointer;
-  border: none;
-  background-color: #288cd7;
+  font: inherit;
+  letter-spacing: 0;
+  transition: background-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
 }
 
-.toggle-button:hover {
-  background-color: #1e6aa3;
+.petrify-button:hover:not(:disabled) {
+  background: #253044;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 32%);
+  transform: translateY(-1px);
 }
 
-.button-icon {
-  padding: 4px;
+.petrify-button:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
 }
 
-.opacity-100 {
-  opacity: 1;
+.petrify-button:disabled {
+  cursor: wait;
+  opacity: 0.75;
 }
 
-.opacity-0 {
-  opacity: 0;
+.petrify-button--success {
+  background: #166534;
+}
+
+.petrify-button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.petrify-error {
+  display: flex;
+  width: min(340px, calc(100vw - 48px));
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 20%);
+  color: #991b1b;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.petrify-error span {
+  flex: 1;
+}
+
+.petrify-error button {
+  margin: -5px -5px 0 0;
+  padding: 1px 5px;
+  border: 0;
+  background: transparent;
+  color: #991b1b;
+  cursor: pointer;
+  font: 700 20px/1 sans-serif;
+}
+
+@media (max-width: 520px) {
+  .petrify-download {
+    right: 14px;
+    bottom: 70px;
+  }
 }

@@ -13,17 +13,19 @@ export default defineManifest({
     default_icon: {
       48: 'public/logo.png',
     },
-    default_popup: 'src/popup/index.html',
+    default_title: 'Petrify',
   },
-  permissions: [
-    'sidePanel',
-    'contentSettings',
+  permissions: ['downloads'],
+  host_permissions: [
+    'https://www.instagram.com/*',
+    'https://i.instagram.com/*',
   ],
+  background: {
+    service_worker: 'src/background/main.ts',
+    type: 'module',
+  },
   content_scripts: [{
     js: ['src/content/main.tsx'],
-    matches: ['https://*/*'],
+    matches: ['https://www.instagram.com/*'],
   }],
-  side_panel: {
-    default_path: 'src/sidepanel/index.html',
-  },
 })

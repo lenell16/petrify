@@ -1,52 +1,21 @@
-# React + Vite + CRXJS
+# Petrify
 
-This template helps you quickly start developing Chrome extensions with React, TypeScript and Vite. It includes the CRXJS Vite plugin for seamless Chrome extension development.
+Petrify is a Chrome extension that downloads media from the Instagram post, reel, or story currently open in the browser. Downloads are processed locally and saved under an account-specific path such as:
 
-## Features
+```text
+Petrify/nasa/nasa_post_DAbC123_01.jpg
+```
 
-- React with TypeScript
-- TypeScript support
-- Vite build tool
-- CRXJS Vite plugin integration
-- Chrome extension manifest configuration
+Carousel items retain their displayed order and may contain both images and videos.
 
-## Quick Start
-
-1. Install dependencies:
+## Development
 
 ```bash
 npm install
-```
-
-2. Start development server:
-
-```bash
-npm run dev
-```
-
-3. Open Chrome and navigate to `chrome://extensions/`, enable "Developer mode", and load the unpacked extension from the `dist` directory.
-
-4. Build for production:
-
-```bash
+npm test
 npm run build
 ```
 
-## Project Structure
+Load the generated `dist` directory as an unpacked extension from `chrome://extensions`. Open an individual Instagram post, reel, or story and use the **Save media** button at the bottom-right of the page.
 
-- `src/popup/` - Extension popup UI
-- `src/content/` - Content scripts
-- `manifest.config.ts` - Chrome extension manifest configuration
-
-## Documentation
-
-- [React Documentation](https://reactjs.org/)
-- [Vite Documentation](https://vitejs.dev/)
-- [CRXJS Documentation](https://crxjs.dev/vite-plugin)
-
-## Chrome Extension Development Notes
-
-- Use `manifest.config.ts` to configure your extension
-- The CRXJS plugin automatically handles manifest generation
-- Content scripts should be placed in `src/content/`
-- Popup UI should be placed in `src/popup/`
+Petrify uses Instagram's authenticated web responses and only works for media the signed-in browser session can view. Instagram's internal endpoints are not a supported public API and may change without notice.
