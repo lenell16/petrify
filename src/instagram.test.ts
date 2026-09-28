@@ -47,6 +47,7 @@ describe('parseInstagramTarget', () => {
 
   it('rejects lookalike hosts and non-specific story routes', () => {
     expect(parseInstagramTarget('https://instagram.example/p/ABC/')).toBeNull()
+    expect(parseInstagramTarget('http://127.0.0.1:5174/p/ABC/')).toBeNull()
     expect(parseInstagramTarget('https://www.instagram.com/stories/nasa/')).toBeNull()
   })
 })

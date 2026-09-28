@@ -1,6 +1,8 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 import pkg from './package.json'
 
+const fixture = process.env.VITE_PETRIFY_FIXTURE === '1'
+
 export default defineManifest({
   manifest_version: 3,
   name: pkg.name,
@@ -30,6 +32,6 @@ export default defineManifest({
   },
   content_scripts: [{
     js: ['src/content/main.tsx'],
-    matches: ['https://www.instagram.com/*'],
+    matches: fixture ? ['http://127.0.0.1:5174/*'] : ['https://www.instagram.com/*'],
   }],
 })

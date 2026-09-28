@@ -6,6 +6,9 @@
   "description": "Download media you can view on Instagram with identifiable filenames.",
   "scripts": {
     "dev": "vite",
+    "fixture:comments": "vite --config fixtures/vite.config.ts",
+    "fixture:instagram": "vite --config fixtures/vite.config.ts",
+    "build:fixture": "tsc -b && VITE_PETRIFY_FIXTURE=1 vite build",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "companion": "node companion/cli.mjs",

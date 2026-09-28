@@ -16,6 +16,14 @@ npm test
 npm run build
 ```
 
+### Local Instagram fixture (real extension, no login)
+
+In one terminal run `npm run fixture:instagram` and leave it running. In another run `npm run build:fixture`, then load `dist` as an unpacked extension in a **separate Chrome profile**. Open `http://127.0.0.1:5174/` in that profile. The fixture build injects only on that exact local origin; the normal `npm run build` restores the production Instagram-only extension. After rebuilding, reload the unpacked extension and the page to use the new content script.
+
+This is a Vite React site with local API responses and bundled NASA-sourced photos plus a short locally generated video. Visit the home feed (`/`), profile/grid (`/fieldnotes/`), profile Reels tab (`/fieldnotes/reels/`), grid-tile modal (`/fieldnotes/p/BB/` after clicking from the profile), standalone post (`/p/BB/`), Reel (`/reel/BC/`), scrolling Reels feed (`/reels/`), stories (`/stories/fieldnotes/` or `/stories/fieldnotes/801/`), and highlight (`/stories/highlights/9001/`). Use Next to switch carousel/story/highlight items. The fixture build uses the **real content script, background inspection and Chrome downloads API**; downloaded files come from local `fixtures/assets/` under your browser's Downloads/Petrify/fieldnotes folder. No authentication or requests to Instagram are needed. Media provenance and regeneration instructions are in [fixtures/assets/README.md](fixtures/assets/README.md). This is a deterministic approximation of the DOM and API responses, not a replacement for checking real Instagram compatibility.
+
+The earlier, simpler comment-focused page is still available with `npm run fixture:comments` at `http://127.0.0.1:5174/fixtures/comments.html`; it imports the content UI with mocked messaging rather than loading the packaged extension.
+
 Load the generated `dist` directory as an unpacked extension from `chrome://extensions`. Use the save icon on an Instagram grid post, individual post, reel, or story to download its media.
 
 Click the Petrify toolbar icon to open download settings. You can change the folder under Chrome's Downloads directory (including nested folders), or enable Chrome's native Save As dialog to choose a destination for each file. Chrome's downloads API does not allow a persistent arbitrary folder outside Downloads; change the browser-wide download location at `chrome://settings/downloads` if you need automatic downloads elsewhere.

@@ -53,7 +53,8 @@ export function parseInstagramTarget(input: string): InstagramTarget | null {
     return null
   }
 
-  if (!INSTAGRAM_HOSTS.has(url.hostname.toLowerCase())) return null
+  if (!INSTAGRAM_HOSTS.has(url.hostname.toLowerCase())
+    && !(import.meta.env.VITE_PETRIFY_FIXTURE === '1' && url.origin === 'http://127.0.0.1:5174')) return null
 
   const segments = url.pathname.split('/').filter(Boolean).map(decodeURIComponent)
   let [surface, firstIdentifier, secondIdentifier] = segments

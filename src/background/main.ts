@@ -8,6 +8,8 @@ import {
 import { isValidFolder } from '../downloadSettings'
 
 const INSTAGRAM_APP_ID = '936619743392459'
+const apiOrigin = import.meta.env.VITE_PETRIFY_FIXTURE === '1'
+  ? 'http://127.0.0.1:5174' : 'https://www.instagram.com'
 
 type DownloadRequest = {
   type: 'download-current-media' | 'inspect-media'
@@ -38,7 +40,7 @@ function mediaIdFor(target: InstagramTarget): string {
 async function fetchMedia(target: InstagramTarget): Promise<unknown> {
   if (target.kind === 'highlight' || target.kind === 'story-tray') {
     const reelId = target.kind === 'highlight' ? `highlight:${target.identifier}` : target.identifier
-    const response = await fetch(`https://www.instagram.com/api/v1/feed/reels_media/?reel_ids=${encodeURIComponent(reelId)}`, {
+    const response = await fetch(`${apiOrigin}/api/v1/feed/reels_media/?reel_ids=${encodeURIComponent(reelId)}`, {
       credentials: 'include',
       headers: {
         'X-IG-App-ID': INSTAGRAM_APP_ID,
@@ -51,7 +53,7 @@ async function fetchMedia(target: InstagramTarget): Promise<unknown> {
   }
 
   const mediaId = mediaIdFor(target)
-  const response = await fetch(`https://www.instagram.com/api/v1/media/${encodeURIComponent(mediaId)}/info/`, {
+  const response = await fetch(`${apiOrigin}/api/v1/media/${encodeURIComponent(mediaId)}/info/`, {
     credentials: 'include',
     headers: {
       'X-IG-App-ID': INSTAGRAM_APP_ID,
