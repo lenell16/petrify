@@ -75,4 +75,26 @@ describe('carousel downloads', () => {
     expect(await send({ type: 'download-current-media', url, index: 0 })).toEqual({ ok: true, count: 1 })
     expect(download.mock.calls[0][0].filename).toBe('Petrify/space/space_post_BA_01.jpg')
   })
+
+  it('uploads only the selected carousel item to the companion instead of Chrome Downloads', async () => {
+    const token = 'a'.repeat(64)
+    get.mockResolvedValue({ destination: 'companion', companionToken: token, companionDestination: 'alternate', downloadFolder: 'Archive' })
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockImplementation(async (input) => {
+      if (input === 'https://cdn/middle.mp4') return { ok: true, blob: async () => new Blob(['video']) } as Response
+      if (input === 'http://127.0.0.1:47631/files') return { ok: true } as Response
+      return { ok: true, json: async () => ({ items: [{ user: { username: 'space' }, carousel_media: [
+        { pk: '100', image_versions2: { candidates: [{ url: 'https://cdn/first.jpg' }] } },
+        { pk: '200', video_versions: [{ url: 'https://cdn/middle.mp4' }] },
+        { pk: '300', image_versions2: { candidates: [{ url: 'https://cdn/last.jpg' }] } },
+      ] }] }) } as Response
+    })
+    expect(await send({ type: 'download-current-media', url, mediaId: '200' })).toEqual({ ok: true, count: 1 })
+    expect(download).not.toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:47631/files', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'X-Petrify-Path': 'Archive/space/space_post_BA_02.mp4', 'X-Petrify-Destination': 'alternate' },
+      body: new Blob(['video']),
+    })
+  })
 })

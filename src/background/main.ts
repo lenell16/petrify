@@ -96,17 +96,40 @@ async function downloadCurrentMedia(request: DownloadRequest): Promise<DownloadR
       throw new Error('The selected carousel item is no longer available.')
     }
 
-    const { downloadFolder, askWhereToSave } = await chrome.storage.local.get(['downloadFolder', 'askWhereToSave'])
+    const { downloadFolder, askWhereToSave, destination, companionToken, companionDestination } = await chrome.storage.local.get(['downloadFolder', 'askWhereToSave', 'destination', 'companionToken', 'companionDestination'])
     const folder = typeof downloadFolder === 'string' && isValidFolder(downloadFolder) ? downloadFolder : 'Petrify'
-
+    if (destination === 'companion' && (typeof companionToken !== 'string' || !/^[a-f0-9]{64}$/.test(companionToken))) {
+      throw new Error('Enter the companion pairing token in download settings first.')
+    }
     for (const [itemIndex, item] of media.items.entries()) {
       if (index !== undefined && itemIndex !== index) continue
-      await chrome.downloads.download({
-        conflictAction: 'uniquify',
-        filename: downloadFilename(media, itemIndex, folder),
-        saveAs: askWhereToSave === true,
-        url: item.url,
-      })
+      const filename = downloadFilename(media, itemIndex, folder)
+      if (destination === 'companion') {
+        const selectedDestination = companionDestination ?? 'local'
+        if (typeof selectedDestination !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(selectedDestination)) {
+          throw new Error('Choose a companion destination in download settings first.')
+        }
+        const source = await fetch(item.url)
+        if (!source.ok) throw new Error(`Could not fetch media (${source.status}).`)
+        try {
+          const result = await fetch('http://127.0.0.1:47631/files', {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${companionToken}`, 'X-Petrify-Path': filename, 'X-Petrify-Destination': selectedDestination },
+            body: await source.blob(),
+          })
+          if (!result.ok) throw new Error(`Companion could not save ${filename} (${result.status}).`)
+        } catch (error) {
+          if (error instanceof TypeError) throw new Error('Could not reach the companion. Start it on this computer and try again.')
+          throw error
+        }
+      } else {
+        await chrome.downloads.download({
+          conflictAction: 'uniquify',
+          filename,
+          saveAs: askWhereToSave === true,
+          url: item.url,
+        })
+      }
     }
 
     return { ok: true, count: index === undefined ? media.items.length : 1 }

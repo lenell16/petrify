@@ -8,11 +8,20 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "companion": "node companion/cli.mjs",
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1141.0",
+    "@aws-sdk/lib-storage": "^3.1141.0",
+    "@aws-sdk/s3-presigned-post": "^3.1141.0",
+    "@aws-sdk/s3-request-presigner": "^3.1141.0",
+    "dotenv": "^18.0.4",
+    "dropbox": "^10.47.0",
+    "files-sdk": "^2.6.0",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.4.0",

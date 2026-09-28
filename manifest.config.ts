@@ -20,6 +20,9 @@ export default defineManifest({
   host_permissions: [
     'https://www.instagram.com/*',
     'https://i.instagram.com/*',
+    'https://*.cdninstagram.com/*',
+    'https://*.fbcdn.net/*',
+    'http://127.0.0.1/*',
   ],
   background: {
     service_worker: 'src/background/main.ts',
